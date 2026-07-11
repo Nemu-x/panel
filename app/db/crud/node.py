@@ -260,7 +260,7 @@ async def get_nodes_usage(
     if node_id is not None:
         conditions.append(NodeUsage.node_id == node_id)
     else:
-        node_id = -1  # Default value for node_id when not specified
+        node_id = 0  # Default value for node_id when not specified
 
     if group_by_node:
         stmt = (

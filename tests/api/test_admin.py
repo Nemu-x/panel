@@ -833,8 +833,8 @@ async def test_admin_usage_returns_stats_for_admin(access_token):
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert data["period"] == "hour"
-        assert "-1" in data["stats"]
-        total = sum(item["total_traffic"] for item in data["stats"]["-1"])
+        assert "0" in data["stats"]
+        total = sum(item["total_traffic"] for item in data["stats"]["0"])
         assert total == 579
     finally:
         delete_user(admin_token, user["username"])

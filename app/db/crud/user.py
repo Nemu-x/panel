@@ -711,7 +711,7 @@ async def get_user_usages(
     if node_id is not None:
         conditions.append(NodeUserUsage.node_id == node_id)
     else:
-        node_id = -1
+        node_id = 0
 
     dialect = db.bind.dialect.name
     if group_by_node:
@@ -1448,7 +1448,7 @@ async def get_all_users_usages(
     if node_id is not None:
         conditions.append(NodeUserUsage.node_id == node_id)
     else:
-        node_id = -1
+        node_id = 0
 
     dialect = db.bind.dialect.name
     from_clause = NodeUserUsage.__table__.join(User, User.id == NodeUserUsage.user_id)
@@ -1580,7 +1580,7 @@ def _build_user_count_query_parts(
     if node_id is not None:
         conditions.append(NodeUserUsage.node_id == node_id)
     else:
-        stats_key = -1
+        stats_key = 0
 
     from_clause = NodeUserUsage.__table__.join(User, User.id == NodeUserUsage.user_id)
     if admins_filter:

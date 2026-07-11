@@ -695,7 +695,7 @@ async def get_admin_usages(
     if node_id is not None:
         conditions.append(NodeUserUsage.node_id == node_id)
     else:
-        node_id = -1
+        node_id = 0
 
     dialect = db.bind.dialect.name
 

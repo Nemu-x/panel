@@ -475,8 +475,8 @@ class TestGetUserUsagesTimezone:
 
             assert isinstance(result, UserUsageStatsList)
             assert result.stats is not None
-            assert -1 in result.stats
-            stats = result.stats[-1]
+            assert 0 in result.stats
+            stats = result.stats[0]
 
             # Should have exactly 3 periods (not 8, not more)
             assert len(stats) == 3, f"Expected 3 periods, got {len(stats)}"
@@ -539,8 +539,8 @@ class TestGetUserUsagesTimezone:
             )
 
             assert result.stats is not None
-            assert -1 in result.stats
-            stats = result.stats[-1]
+            assert 0 in result.stats
+            stats = result.stats[0]
 
             # Expected: Records added every 5 days starting from Feb 1
             # In the Feb 1 - May 1 range, we should have multiple records
@@ -711,8 +711,8 @@ class TestGetAdminUsagesTimezone:
             )
 
             assert result.stats is not None
-            assert -1 in result.stats  # Default node_id when not grouped by node
-            stats = result.stats[-1]
+            assert 0 in result.stats  # Default node_id when not grouped by node
+            stats = result.stats[0]
 
             # Should have exactly 3 periods for hour-level grouping in 3-hour range
             assert len(stats) == 3, f"Expected 3 periods, got {len(stats)}"
@@ -775,8 +775,8 @@ class TestGetAdminUsagesTimezone:
             )
 
             assert result.stats is not None
-            assert -1 in result.stats
-            stats = result.stats[-1]
+            assert 0 in result.stats
+            stats = result.stats[0]
 
             # Expected: Records added every 6 hours from Feb 1 - Feb 15
             # Feb 1-15 is 14 days = 336 hours / 6 hours = 56 records
@@ -872,14 +872,14 @@ class TestGetUserCountMetricStats:
             )
 
             assert isinstance(online, UserCountMetricStatsList)
-            stats = online.stats[-1]
+            stats = online.stats[0]
             assert [stat.period_start for stat in stats] == [
                 datetime(2026, 12, 10, 0, 0, 0, tzinfo=tehran_tz),
                 datetime(2026, 12, 10, 1, 0, 0, tzinfo=tehran_tz),
             ]
-            assert [stat.count for stat in online.stats[-1]] == [2, 2]
-            assert [stat.count for stat in expired.stats[-1]] == [1, 0]
-            assert [stat.count for stat in limited.stats[-1]] == [0, 1]
+            assert [stat.count for stat in online.stats[0]] == [2, 2]
+            assert [stat.count for stat in expired.stats[0]] == [1, 0]
+            assert [stat.count for stat in limited.stats[0]] == [0, 1]
 
     @pytest.mark.asyncio
     async def test_single_metric_responses_share_count_logic(self):
@@ -947,11 +947,11 @@ class TestGetUserCountMetricStats:
 
             assert isinstance(online, UserCountMetricStatsList)
             assert online.metric == UserCountMetric.online
-            assert online.stats[-1][0].count == 3
+            assert online.stats[0][0].count == 3
             assert expired.metric == UserCountMetric.expired
-            assert expired.stats[-1][0].count == 1
+            assert expired.stats[0][0].count == 1
             assert limited.metric == UserCountMetric.limited
-            assert limited.stats[-1][0].count == 1
+            assert limited.stats[0][0].count == 1
 
     @pytest.mark.asyncio
     async def test_partial_first_bucket_is_excluded(self):
@@ -986,7 +986,7 @@ class TestGetUserCountMetricStats:
                 metric=UserCountMetric.online,
             )
 
-            stats = result.stats[-1]
+            stats = result.stats[0]
             assert [stat.period_start for stat in stats] == [
                 datetime(2026, 5, 9, 15, 0, 0, tzinfo=tehran_tz),
                 datetime(2026, 5, 9, 16, 0, 0, tzinfo=tehran_tz),
