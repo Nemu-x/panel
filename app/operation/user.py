@@ -74,7 +74,6 @@ from app.models.user import (
     BulkUsersProxy,
     BulkUsersSelection,
     BulkUsersSetOwner,
-    BulkWireGuardPeerIPs,
     CreateUserFromTemplate,
     ExpiredUsersQuery,
     ModifyUserByTemplate,
@@ -1931,35 +1930,53 @@ class UserOperation(BaseOperation):
             return {"detail": f"operation has been successfuly done on {users_count} users"}
         return users_count
 
-    async def bulk_modify_proxy_settings(self, db: AsyncSession, bulk_model: BulkUsersProxy):
-        if bulk_model.method is None:
+    async def bulk_modify_proxy_settings(
+        self, db: AsyncSession, bulk_model: BulkUsersProxy, admin: AdminDetails = None
+    ):
+        if bulk_model.method is None and not bulk_model.reallocate_wireguard_ips:
             await self.raise_error(message="No supported proxy settings were provided", code=400, db=db)
+
+        # Handle WireGuard re-allocation
+        wireguard_out = None
+        if bulk_model.reallocate_wireguard_ips:
+            if not bulk_model.dry_run and not bulk_model.confirm:
+                await self.raise_error(
+                    message="Set confirm=true to apply changes, or use dry_run=true to preview.",
+                    code=400,
+                    db=db,
+                )
+            wg_users = await get_bulk_wireguard_peer_ip_users(
+                db,
+                bulk_model,
+                admin_id=get_scope_admin_id(admin, "users", "update") if admin else None,
+            )
+            wireguard_out = await run_bulk_reallocate_wireguard_peer_ips(
+                db,
+                wg_users,
+                dry_run=bulk_model.dry_run,
+                replace_all=bulk_model.replace_all,
+            )
+
+        # Handle Shadowsocks method update
+        shadowsocks_count = 0
+        if bulk_model.method is not None:
+            if bulk_model.dry_run:
+                shadowsocks_count = await count_bulk_proxy_targets(db, bulk_model)
+            else:
+                ss_users, shadowsocks_count = await update_users_proxy_settings(db, bulk_model)
+                await sync_users(ss_users)
+
+        if bulk_model.reallocate_wireguard_ips:
+            # If WireGuard reallocation was performed, return its structured response
+            return WireGuardPeerIPsReallocateResponse(**wireguard_out)
+
+        # Otherwise return standard response for Shadowsocks modification
         if bulk_model.dry_run:
-            n = await count_bulk_proxy_targets(db, bulk_model)
-            return BulkOperationDryRunResponse(affected_users=n)
-        users, users_count = await update_users_proxy_settings(db, bulk_model)
-        await sync_users(users)
+            return BulkOperationDryRunResponse(affected_users=shadowsocks_count)
 
         if self.operator_type in (OperatorType.API, OperatorType.WEB):
-            return {"detail": f"operation has been successfuly done on {users_count} users"}
-        return users_count
-
-    async def bulk_reallocate_wireguard_peer_ips(
-        self, db: AsyncSession, body: BulkWireGuardPeerIPs, admin: AdminDetails
-    ) -> WireGuardPeerIPsReallocateResponse:
-        users = await get_bulk_wireguard_peer_ip_users(
-            db,
-            body,
-            admin_id=get_scope_admin_id(admin, "users", "update"),
-        )
-
-        out = await run_bulk_reallocate_wireguard_peer_ips(
-            db,
-            users,
-            dry_run=body.dry_run,
-            replace_all=body.replace_all,
-        )
-        return WireGuardPeerIPsReallocateResponse(**out)
+            return {"detail": f"operation has been successfuly done on {shadowsocks_count} users"}
+        return shadowsocks_count
 
     async def _get_users_sub_update_list(
         self, db: AsyncSession, db_user: User, offset: int = 0, limit: int = 10

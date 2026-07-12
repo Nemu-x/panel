@@ -441,13 +441,10 @@ class BulkUser(BulkUserFilter):
 
 class BulkUsersProxy(BulkUserFilter):
     method: ShadowsocksMethods | None = Field(default=None)
-
-
-class BulkWireGuardPeerIPs(BulkUserFilter):
-    """Re-seat WireGuard peer IPs (same scoping as BulkUser: users, admins, group_ids, status)."""
-
+    reallocate_wireguard_ips: bool | None = Field(default=None)
     confirm: bool = False
     replace_all: bool = False
+
 
 
 class BulkOperationDryRunResponse(BaseModel):

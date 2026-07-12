@@ -693,12 +693,13 @@ def test_bulk_set_owner_by_ids(access_token):
 def test_bulk_wireguard_reallocate_peer_ips_accepts_status_filter(access_token):
     """Dry-run accepts optional status filter like other bulk user actions."""
     response = client.post(
-        "/api/users/bulk/wireguard/reallocate-peer-ips",
+        "/api/users/bulk/proxy_settings",
         headers={"Authorization": f"Bearer {access_token}"},
         json={
             "dry_run": True,
             "confirm": False,
             "status": ["active", "disabled"],
+            "reallocate_wireguard_ips": True,
         },
     )
     assert response.status_code == status.HTTP_200_OK
@@ -743,18 +744,18 @@ def test_bulk_wireguard_reallocate_peer_ips_repairs_duplicates(access_token):
         set_user_wireguard_peer_ips(second_user["username"], [duplicate_peer_ip])
 
         dry_run_response = client.post(
-            "/api/users/bulk/wireguard/reallocate-peer-ips",
+            "/api/users/bulk/proxy_settings",
             headers={"Authorization": f"Bearer {access_token}"},
-            json={"dry_run": True, "confirm": False, "users": [second_user["id"]]},
+            json={"dry_run": True, "confirm": False, "users": [second_user["id"]], "reallocate_wireguard_ips": True},
         )
         assert dry_run_response.status_code == status.HTTP_200_OK
         assert dry_run_response.json()["candidates"] == 1
         assert second_user["username"] in dry_run_response.json()["sample_usernames"]
 
         response = client.post(
-            "/api/users/bulk/wireguard/reallocate-peer-ips",
+            "/api/users/bulk/proxy_settings",
             headers={"Authorization": f"Bearer {access_token}"},
-            json={"confirm": True, "users": [second_user["id"]]},
+            json={"confirm": True, "users": [second_user["id"]], "reallocate_wireguard_ips": True},
         )
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["updated"] == 1
@@ -823,17 +824,17 @@ def test_bulk_wireguard_reallocate_peer_ips_updates_multiple_selected_users(acce
 
         selected_user_ids = [duplicate_user["id"], missing_user["id"]]
         dry_run_response = client.post(
-            "/api/users/bulk/wireguard/reallocate-peer-ips",
+            "/api/users/bulk/proxy_settings",
             headers={"Authorization": f"Bearer {access_token}"},
-            json={"dry_run": True, "confirm": False, "users": selected_user_ids},
+            json={"dry_run": True, "confirm": False, "users": selected_user_ids, "reallocate_wireguard_ips": True},
         )
         assert dry_run_response.status_code == status.HTTP_200_OK
         assert dry_run_response.json()["candidates"] == 2
 
         response = client.post(
-            "/api/users/bulk/wireguard/reallocate-peer-ips",
+            "/api/users/bulk/proxy_settings",
             headers={"Authorization": f"Bearer {access_token}"},
-            json={"confirm": True, "users": selected_user_ids},
+            json={"confirm": True, "users": selected_user_ids, "reallocate_wireguard_ips": True},
         )
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["updated"] == 2
@@ -891,17 +892,17 @@ def test_bulk_wireguard_reallocate_peer_ips_repairs_duplicate_keys(access_token)
         set_user_wireguard_keys(second_user["username"], duplicate_private_key, duplicate_public_key)
 
         dry_run_response = client.post(
-            "/api/users/bulk/wireguard/reallocate-peer-ips",
+            "/api/users/bulk/proxy_settings",
             headers={"Authorization": f"Bearer {access_token}"},
-            json={"dry_run": True, "confirm": False, "users": [second_user["id"]]},
+            json={"dry_run": True, "confirm": False, "users": [second_user["id"]], "reallocate_wireguard_ips": True},
         )
         assert dry_run_response.status_code == status.HTTP_200_OK
         assert dry_run_response.json()["candidates"] == 1
 
         response = client.post(
-            "/api/users/bulk/wireguard/reallocate-peer-ips",
+            "/api/users/bulk/proxy_settings",
             headers={"Authorization": f"Bearer {access_token}"},
-            json={"confirm": True, "users": [second_user["id"]]},
+            json={"confirm": True, "users": [second_user["id"]], "reallocate_wireguard_ips": True},
         )
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["updated"] == 1
